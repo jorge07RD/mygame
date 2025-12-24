@@ -69,7 +69,7 @@ while running:
     # Dibujar la cadena
     referencia = ancla_pos
     for i, punto in enumerate(puntos_cadena):
-        pygame.draw.line(pantalla, BLANCO, referencia, punto, 2)
+        pygame.draw.aaline(pantalla, BLANCO, referencia, punto, 2)
         pygame.draw.circle(pantalla, ROJO, punto, 10)
         referencia = punto
 
