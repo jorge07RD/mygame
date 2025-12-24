@@ -14,7 +14,8 @@ Azul = (0, 0, 255)
 NEGRO = (0, 0, 0)
 
 # Distancias entre cada punto consecutivo
-distancias = [100,100]
+# distancias = [100] * 2 + [50] * 8  + [25] * 10 + [10] * 10# Cadena de 10 puntos con distancia fija de 50 píxeles
+distancias = [100] * 2 # Cadena de 10 puntos con distancia fija de 50 píxeles
 
 # Inicializar posiciones de todos los puntos de la cadena
 puntos_cadena = []
@@ -43,7 +44,7 @@ def restringir_distancia(ancla, punto, distancia):
     nuevo_y = ancla[1] + dy_norm * distancia
     
     return [int(nuevo_x), int(nuevo_y)]
-
+LINE = False
 running = True
 while running:
     for event in pygame.event.get():
@@ -67,13 +68,22 @@ while running:
         puntos_cadena[i] = restringir_distancia(puntos_cadena[i-1], puntos_cadena[i], distancias[i])
 
     # Dibujar la cadena
+    print(puntos_cadena)
     referencia = ancla_pos
     for i, punto in enumerate(puntos_cadena):
-        pygame.draw.aaline(pantalla, BLANCO, referencia, punto, 2)
-        pygame.draw.circle(pantalla, ROJO, punto, 10)
+        if LINE:
+            pygame.draw.aaline(pantalla, ROJO, referencia, punto, 2)
+        print("32"* 32) 
+        print(punto)
+        pygame.draw.circle(pantalla, BLANCO, punto, 5)
+
+        # Círculo grande solo contorno (el 2 es el grosor del borde)
+        pygame.draw.circle(pantalla, BLANCO, (punto[0], punto[1]), distancias[i],2 )
+        pygame.draw.circle(pantalla, ROJO, (punto[0]+distancias[i], punto[1]), 5)
+        pygame.draw.circle(pantalla, ROJO, (punto[0]-distancias[i], punto[1]), 5)
         referencia = punto
 
     pygame.display.flip()
     # clock.tick(10)
-    clock.tick(140)
+    clock.tick(60)
 pygame.quit()
