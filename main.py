@@ -3,6 +3,7 @@ Simulación de serpiente con física de cadena cinemática.
 Implementa una serpiente que sigue al mouse o se controla con las flechas del teclado,
 con restricciones de distancia y ángulo entre segmentos para movimiento realista.
 """
+
 from typing import List, Tuple
 import pygame
 import math
@@ -58,7 +59,7 @@ distancias = [DISTANCIA_SEGMENTO] * NUM_SEGMENTOS
 
 # Crear la cadena de segmentos inicialmente en línea recta horizontal
 puntos_cadena: List[List[float]] = []
-pos_actual = [ANCHO // 2, ALTO // 2]
+pos_actual: List[float] = [float(ANCHO // 2), float(ALTO // 2)]
 for dist in distancias:
     pos_actual = [pos_actual[0] + dist, pos_actual[1]]
     puntos_cadena.append(list(pos_actual))
@@ -68,16 +69,18 @@ for dist in distancias:
 # ============================================================================
 
 usar_mouse = True  # True = sigue el mouse, False = control con flechas
-ancla_pos = [ANCHO // 2, ALTO // 2]  # Posición de la cabeza de la serpiente
+ancla_pos: List[float] = [
+    float(ANCHO // 2),
+    float(ALTO // 2),
+]  # Posición de la cabeza de la serpiente
 
 # ============================================================================
 # FUNCIONES DE FÍSICA
 # ============================================================================
 
+
 def restringir_distancia(
-    ancla: List[float],
-    punto: List[float],
-    distancia: float
+    ancla: List[float], punto: List[float], distancia: float
 ) -> Tuple[List[float], float]:
     """
     Restringe un punto a una distancia fija desde un ancla.
@@ -117,10 +120,9 @@ def restringir_distancia(
 
     return [nuevo_x, nuevo_y], angulo
 
+
 def limitar_angulo(
-    angulo_actual: float,
-    angulo_anterior: float,
-    limite: float
+    angulo_actual: float, angulo_anterior: float, limite: float
 ) -> float:
     """
     Limita el cambio angular entre dos segmentos consecutivos.
@@ -155,11 +157,9 @@ def limitar_angulo(
 
     return angulo_actual
 
+
 def aplicar_restricciones(
-    ancla: List[float],
-    punto: List[float],
-    distancia: float,
-    angulo_anterior: float
+    ancla: List[float], punto: List[float], distancia: float, angulo_anterior: float
 ) -> Tuple[List[float], float]:
     """
     Aplica restricciones de distancia y ángulo a un segmento de la cadena.
@@ -193,9 +193,11 @@ def aplicar_restricciones(
 
     return [nuevo_x, nuevo_y], angulo_limitado
 
+
 # ============================================================================
 # FUNCIONES DE RENDERIZADO
 # ============================================================================
+
 
 def obtener_grosor(indice: int, total: int) -> float:
     """
@@ -235,7 +237,7 @@ def dibujar_boton(
     y: int,
     ancho: int,
     alto: int,
-    activo: bool
+    activo: bool,
 ) -> pygame.Rect:
     """
     Dibuja un botón con texto centrado.
@@ -262,10 +264,11 @@ def dibujar_boton(
     # Renderizar y centrar texto
     fuente = pygame.font.Font(None, 24)
     texto_render = fuente.render(texto, True, BLANCO)
-    texto_rect = texto_render.get_rect(center=(x + ancho//2, y + alto//2))
+    texto_rect = texto_render.get_rect(center=(x + ancho // 2, y + alto // 2))
     pantalla.blit(texto_render, texto_rect)
 
     return pygame.Rect(x, y, ancho, alto)
+
 
 # ============================================================================
 # LOOP PRINCIPAL DEL JUEGO
@@ -309,11 +312,12 @@ while running:
             ancla_pos[1] += VELOCIDAD_TECLADO
 
         # Mantener la cabeza dentro de la pantalla
-        ancla_pos[0] = max(0, min(ANCHO, ancla_pos[0]))
-        ancla_pos[1] = max(0, min(ALTO, ancla_pos[1]))
+        ancla_pos[0] = max(0.0, min(float(ANCHO), ancla_pos[0]))
+        ancla_pos[1] = max(0.0, min(float(ALTO), ancla_pos[1]))
     else:
         # Modo mouse: seguir la posición del cursor
-        ancla_pos = list(pygame.mouse.get_pos())
+        mouse_pos = pygame.mouse.get_pos()
+        ancla_pos = [float(mouse_pos[0]), float(mouse_pos[1])]
 
     # ========================================================================
     # RENDERIZADO
@@ -328,18 +332,13 @@ while running:
     # Actualizar posiciones de la cadena de segmentos
     # Primer segmento: mantener distancia fija desde la cabeza
     puntos_cadena[0], angulo_prev = restringir_distancia(
-        ancla_pos,
-        puntos_cadena[0],
-        distancias[0]
+        ancla_pos, puntos_cadena[0], distancias[0]
     )
 
     # Segmentos subsecuentes: aplicar restricciones de distancia y ángulo
     for i in range(1, len(puntos_cadena)):
         puntos_cadena[i], angulo_prev = aplicar_restricciones(
-            puntos_cadena[i-1],
-            puntos_cadena[i],
-            distancias[i],
-            angulo_prev
+            puntos_cadena[i - 1], puntos_cadena[i], distancias[i], angulo_prev
         )
 
     # ========================================================================
@@ -357,17 +356,23 @@ while running:
     angulo_cabeza = math.atan2(dy, dx)
 
     # Calcular puntos iniciales del contorno en la cabeza
-    puntos_izq.append((
-        int(ancla_pos[0] + GROSOR_CABEZA * math.cos(angulo_cabeza + math.pi/2)),
-        int(ancla_pos[1] + GROSOR_CABEZA * math.sin(angulo_cabeza + math.pi/2))
-    ))
-    puntos_der.append((
-        int(ancla_pos[0] + GROSOR_CABEZA * math.cos(angulo_cabeza - math.pi/2)),
-        int(ancla_pos[1] + GROSOR_CABEZA * math.sin(angulo_cabeza - math.pi/2))
-    ))
+    puntos_izq.append(
+        (
+            int(ancla_pos[0] + GROSOR_CABEZA * math.cos(angulo_cabeza + math.pi / 2)),
+            int(ancla_pos[1] + GROSOR_CABEZA * math.sin(angulo_cabeza + math.pi / 2)),
+        )
+    )
+    puntos_der.append(
+        (
+            int(ancla_pos[0] + GROSOR_CABEZA * math.cos(angulo_cabeza - math.pi / 2)),
+            int(ancla_pos[1] + GROSOR_CABEZA * math.sin(angulo_cabeza - math.pi / 2)),
+        )
+    )
 
     # Calcular puntos del contorno para cada segmento del cuerpo
     referencia = ancla_pos
+    angulo = angulo_cabeza  # Inicializar con el ángulo de la cabeza
+
     for i, punto in enumerate(puntos_cadena):
         puntos_centro.append(punto)
 
@@ -380,21 +385,21 @@ while running:
         grosor = obtener_grosor(i, len(puntos_cadena))
 
         # Calcular puntos perpendiculares al ángulo (lados del cuerpo)
-        x_der = punto[0] + grosor * math.cos(angulo + math.pi/2)
-        y_der = punto[1] + grosor * math.sin(angulo + math.pi/2)
+        x_der = punto[0] + grosor * math.cos(angulo + math.pi / 2)
+        y_der = punto[1] + grosor * math.sin(angulo + math.pi / 2)
         puntos_der.append((int(x_der), int(y_der)))
 
-        x_izq = punto[0] + grosor * math.cos(angulo - math.pi/2)
-        y_izq = punto[1] + grosor * math.sin(angulo - math.pi/2)
+        x_izq = punto[0] + grosor * math.cos(angulo - math.pi / 2)
+        y_izq = punto[1] + grosor * math.sin(angulo - math.pi / 2)
         puntos_izq.append((int(x_izq), int(y_izq)))
 
         referencia = punto
 
-    # Calcular punta de la cola
+    # Calcular punta de la cola usando el último ángulo calculado
     ultimo = puntos_cadena[-1]
     puntos_cola = (
         int(ultimo[0] + EXTENSION_COLA * math.cos(angulo)),
-        int(ultimo[1] + EXTENSION_COLA * math.sin(angulo))
+        int(ultimo[1] + EXTENSION_COLA * math.sin(angulo)),
     )
 
     # Construir el polígono completo del manto (contorno del cuerpo)
@@ -421,8 +426,8 @@ while running:
             pantalla,
             AMARILLO,
             (int(puntos_centro[i][0]), int(puntos_centro[i][1])),
-            (int(puntos_centro[i+1][0]), int(puntos_centro[i+1][1])),
-            4
+            (int(puntos_centro[i + 1][0]), int(puntos_centro[i + 1][1])),
+            4,
         )
 
     # ========================================================================
@@ -431,27 +436,32 @@ while running:
 
     # Círculo de la cabeza (relleno y borde)
     pygame.draw.circle(
-        pantalla,
-        VERDE_OSCURO,
-        (int(ancla_pos[0]), int(ancla_pos[1])),
-        RADIO_CABEZA
+        pantalla, VERDE_OSCURO, (int(ancla_pos[0]), int(ancla_pos[1])), RADIO_CABEZA
     )
     pygame.draw.circle(
-        pantalla,
-        VERDE_CLARO,
-        (int(ancla_pos[0]), int(ancla_pos[1])),
-        RADIO_CABEZA,
-        2
+        pantalla, VERDE_CLARO, (int(ancla_pos[0]), int(ancla_pos[1])), RADIO_CABEZA, 2
     )
 
     # Calcular posiciones de los ojos
     ojo_izq = (
-        int(ancla_pos[0] + OFFSET_OJO * math.cos(angulo_cabeza + math.pi + ANGULO_SEPARACION_OJOS)),
-        int(ancla_pos[1] + OFFSET_OJO * math.sin(angulo_cabeza + math.pi + ANGULO_SEPARACION_OJOS))
+        int(
+            ancla_pos[0]
+            + OFFSET_OJO * math.cos(angulo_cabeza + math.pi + ANGULO_SEPARACION_OJOS)
+        ),
+        int(
+            ancla_pos[1]
+            + OFFSET_OJO * math.sin(angulo_cabeza + math.pi + ANGULO_SEPARACION_OJOS)
+        ),
     )
     ojo_der = (
-        int(ancla_pos[0] + OFFSET_OJO * math.cos(angulo_cabeza + math.pi - ANGULO_SEPARACION_OJOS)),
-        int(ancla_pos[1] + OFFSET_OJO * math.sin(angulo_cabeza + math.pi - ANGULO_SEPARACION_OJOS))
+        int(
+            ancla_pos[0]
+            + OFFSET_OJO * math.cos(angulo_cabeza + math.pi - ANGULO_SEPARACION_OJOS)
+        ),
+        int(
+            ancla_pos[1]
+            + OFFSET_OJO * math.sin(angulo_cabeza + math.pi - ANGULO_SEPARACION_OJOS)
+        ),
     )
 
     # Dibujar ojos (esclerótica amarilla y pupila negra)
@@ -467,21 +477,39 @@ while running:
     # Calcular posición base de la lengua (frente de la cabeza)
     lengua_base = (
         int(ancla_pos[0] + LONGITUD_BASE_LENGUA * math.cos(angulo_cabeza + math.pi)),
-        int(ancla_pos[1] + LONGITUD_BASE_LENGUA * math.sin(angulo_cabeza + math.pi))
+        int(ancla_pos[1] + LONGITUD_BASE_LENGUA * math.sin(angulo_cabeza + math.pi)),
     )
 
     # Calcular puntas bifurcadas de la lengua
     lengua_punta1 = (
-        int(lengua_base[0] + LONGITUD_PUNTA_LENGUA * math.cos(angulo_cabeza + math.pi + ANGULO_BIFURCACION_LENGUA)),
-        int(lengua_base[1] + LONGITUD_PUNTA_LENGUA * math.sin(angulo_cabeza + math.pi + ANGULO_BIFURCACION_LENGUA))
+        int(
+            lengua_base[0]
+            + LONGITUD_PUNTA_LENGUA
+            * math.cos(angulo_cabeza + math.pi + ANGULO_BIFURCACION_LENGUA)
+        ),
+        int(
+            lengua_base[1]
+            + LONGITUD_PUNTA_LENGUA
+            * math.sin(angulo_cabeza + math.pi + ANGULO_BIFURCACION_LENGUA)
+        ),
     )
     lengua_punta2 = (
-        int(lengua_base[0] + LONGITUD_PUNTA_LENGUA * math.cos(angulo_cabeza + math.pi - ANGULO_BIFURCACION_LENGUA)),
-        int(lengua_base[1] + LONGITUD_PUNTA_LENGUA * math.sin(angulo_cabeza + math.pi - ANGULO_BIFURCACION_LENGUA))
+        int(
+            lengua_base[0]
+            + LONGITUD_PUNTA_LENGUA
+            * math.cos(angulo_cabeza + math.pi - ANGULO_BIFURCACION_LENGUA)
+        ),
+        int(
+            lengua_base[1]
+            + LONGITUD_PUNTA_LENGUA
+            * math.sin(angulo_cabeza + math.pi - ANGULO_BIFURCACION_LENGUA)
+        ),
     )
 
     # Dibujar las tres líneas que forman la lengua bífida
-    pygame.draw.line(pantalla, ROJO, (int(ancla_pos[0]), int(ancla_pos[1])), lengua_base, 3)
+    pygame.draw.line(
+        pantalla, ROJO, (int(ancla_pos[0]), int(ancla_pos[1])), lengua_base, 3
+    )
     pygame.draw.line(pantalla, ROJO, lengua_base, lengua_punta1, 2)
     pygame.draw.line(pantalla, ROJO, lengua_base, lengua_punta2, 2)
 
