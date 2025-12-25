@@ -2,7 +2,7 @@ import pygame
 import math
 
 pygame.init()
-ANCHO, ALTO = 800, 600
+ANCHO, ALTO = 2560, 1440
 pantalla = pygame.display.set_mode((ANCHO, ALTO))
 clock = pygame.time.Clock()
 
@@ -15,7 +15,7 @@ ROJO = (200, 50, 50)
 GRIS = (100, 100, 100)
 
 # Más segmentos para una serpiente suave
-NUM_SEGMENTOS = 15
+NUM_SEGMENTOS = 50
 distancias = [30] * NUM_SEGMENTOS
 ANGULO_MAX = math.radians(25)
 
