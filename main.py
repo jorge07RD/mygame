@@ -4,7 +4,7 @@ Implementa una serpiente que sigue al mouse o se controla con las flechas del te
 con restricciones de distancia y ángulo entre segmentos para movimiento realista.
 """
 
-from typing import List, Tuple
+from typing import List, Tuple, Optional
 import pygame
 import math
 import random
@@ -200,37 +200,49 @@ def calcular_num_segmentos(puntos: int) -> int:
     return max(SEGMENTOS_MINIMOS, puntos * SEGMENTOS_POR_PUNTO)
 
 
-def inicializar_cadena(num_segmentos: int) -> List[List[float]]:
+def inicializar_cadena(num_segmentos: int, pos_inicial: Optional[List[float]] = None) -> List[List[float]]:
     """
     Crea una cadena de segmentos inicial en línea recta.
 
     Args:
         num_segmentos: Número de segmentos a crear.
+        pos_inicial: Posición inicial opcional. Si es None, usa posición aleatoria.
 
     Returns:
         Lista de posiciones de los segmentos.
     """
     cadena = []
-    pos_actual = [float(ANCHO // 2), float(ALTO // 2)]
+    if pos_inicial is None:
+        # Posición aleatoria alejada del centro
+        pos_actual = [
+            float(random.randint(300, ANCHO - 300)),
+            float(random.randint(300, ALTO - 300))
+        ]
+    else:
+        pos_actual = pos_inicial.copy()
+
     for _ in range(num_segmentos):
         pos_actual = [pos_actual[0] + DISTANCIA_SEGMENTO, pos_actual[1]]
         cadena.append(list(pos_actual))
     return cadena
 
 
+# Crear posición inicial aleatoria para la serpiente
+posicion_inicial_serpiente = [
+    float(random.randint(300, ANCHO - 300)),
+    float(random.randint(300, ALTO - 300))
+]
+
 # Crear la cadena de segmentos inicialmente
 num_segmentos_inicial = calcular_num_segmentos(1)  # Comienza con 1 punto
-puntos_cadena: List[List[float]] = inicializar_cadena(num_segmentos_inicial)
+puntos_cadena: List[List[float]] = inicializar_cadena(num_segmentos_inicial, posicion_inicial_serpiente)
 
 # ============================================================================
 # VARIABLES DE CONTROL
 # ============================================================================
 
 usar_mouse = True  # True = sigue el mouse, False = control con flechas
-ancla_pos: List[float] = [
-    float(ANCHO // 2),
-    float(ALTO // 2),
-]  # Posición de la cabeza de la serpiente
+ancla_pos: List[float] = posicion_inicial_serpiente.copy()  # Posición de la cabeza de la serpiente
 
 # ============================================================================
 # VARIABLES DEL SISTEMA DE JUEGO
@@ -247,10 +259,17 @@ ratones: List[Mouse] = []
 tiempo_ultimo_spawn = 0
 intervalo_spawn = 2000  # Milisegundos entre cada spawn de ratón (2 segundos)
 
-# Posición del agujero (centro de la pantalla)
-AGUJERO_X = ANCHO // 2
-AGUJERO_Y = ALTO // 2
+# Configuración del agujero
 RADIO_AGUJERO = 40
+VELOCIDAD_AGUJERO = 1.5  # Velocidad de movimiento del agujero
+
+# Posición inicial del agujero (aleatoria)
+agujero_x = float(random.randint(300, ANCHO - 300))
+agujero_y = float(random.randint(300, ALTO - 300))
+
+# Destino del agujero
+agujero_destino_x = float(random.randint(300, ANCHO - 300))
+agujero_destino_y = float(random.randint(300, ALTO - 300))
 
 # ============================================================================
 # FUNCIONES DE FÍSICA
@@ -475,9 +494,19 @@ while running:
                 puntos = 1
                 ratones.clear()
                 tiempo_ultimo_spawn = 0
-                # Reiniciar serpiente a longitud inicial
+                # Reiniciar serpiente en posición aleatoria
+                posicion_inicial_serpiente = [
+                    float(random.randint(300, ANCHO - 300)),
+                    float(random.randint(300, ALTO - 300))
+                ]
+                ancla_pos = posicion_inicial_serpiente.copy()
                 num_segmentos_inicial = calcular_num_segmentos(1)
-                puntos_cadena = inicializar_cadena(num_segmentos_inicial)
+                puntos_cadena = inicializar_cadena(num_segmentos_inicial, posicion_inicial_serpiente)
+                # Reiniciar posición del agujero
+                agujero_x = float(random.randint(300, ANCHO - 300))
+                agujero_y = float(random.randint(300, ALTO - 300))
+                agujero_destino_x = float(random.randint(300, ANCHO - 300))
+                agujero_destino_y = float(random.randint(300, ALTO - 300))
 
             # Salir del juego si está en Game Over
             if event.key == pygame.K_ESCAPE and game_over:
@@ -516,10 +545,23 @@ while running:
     # ========================================================================
 
     if not game_over:
+        # Mover el agujero hacia su destino
+        dx_agujero = agujero_destino_x - agujero_x
+        dy_agujero = agujero_destino_y - agujero_y
+        dist_agujero = math.sqrt(dx_agujero * dx_agujero + dy_agujero * dy_agujero)
+
+        if dist_agujero < 5:  # Si llegó al destino, elegir uno nuevo
+            agujero_destino_x = float(random.randint(300, ANCHO - 300))
+            agujero_destino_y = float(random.randint(300, ALTO - 300))
+        else:
+            # Mover hacia el destino
+            agujero_x += (dx_agujero / dist_agujero) * VELOCIDAD_AGUJERO
+            agujero_y += (dy_agujero / dist_agujero) * VELOCIDAD_AGUJERO
+
         # Spawn de nuevos ratones desde el agujero
         tiempo_actual = pygame.time.get_ticks()
         if tiempo_actual - tiempo_ultimo_spawn > intervalo_spawn:
-            nuevo_raton = Mouse(float(AGUJERO_X), float(AGUJERO_Y), ANCHO, ALTO)
+            nuevo_raton = Mouse(float(agujero_x), float(agujero_y), ANCHO, ALTO)
             ratones.append(nuevo_raton)
             tiempo_ultimo_spawn = tiempo_actual
 
@@ -798,9 +840,9 @@ while running:
     # DIBUJAR AGUJERO Y RATONES
     # ========================================================================
 
-    # Dibujar agujero en el centro (círculo oscuro)
-    pygame.draw.circle(pantalla, (30, 30, 30), (AGUJERO_X, AGUJERO_Y), RADIO_AGUJERO)
-    pygame.draw.circle(pantalla, (60, 60, 60), (AGUJERO_X, AGUJERO_Y), RADIO_AGUJERO, 3)
+    # Dibujar agujero (círculo oscuro que se mueve)
+    pygame.draw.circle(pantalla, (30, 30, 30), (int(agujero_x), int(agujero_y)), RADIO_AGUJERO)
+    pygame.draw.circle(pantalla, (60, 60, 60), (int(agujero_x), int(agujero_y)), RADIO_AGUJERO, 3)
 
     # Dibujar todos los ratones
     for raton in ratones:
